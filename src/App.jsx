@@ -234,7 +234,6 @@ export default function App() {
           </select>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={() => setFront(front === "hr" ? "en" : "hr")} style={buttonBase()}>{front === "hr" ? "Front: HR → EN" : "Front: EN → HR"}</button>
-            <button onClick={() => window.speechSynthesis && new SpeechSynthesisUtterance("Dobar dan")} style={buttonBase()}>Test Audio</button>
           </div>
         </div>
 
@@ -250,6 +249,7 @@ export default function App() {
             showAnswer={showAnswer}
             onFlip={() => setShowAnswer(s => !s)}
             onGrade={(q) => nextDue && gradeCard(nextDue, q)}
+            speak={speak}
           />
         )}
 
@@ -259,6 +259,7 @@ export default function App() {
             idx={quizIdx}
             setIdx={setQuizIdx}
             front={front}
+            speak={speak}
           />
         )}
 
@@ -271,6 +272,7 @@ export default function App() {
             onExport={exportJSON}
             onImport={onImportJSON}
             importErr={importErr}
+            speak={speak}
           />
         )}
       </div>
@@ -278,7 +280,7 @@ export default function App() {
   );
 }
 
-function FlashcardStudy({ card, front, showAnswer, onFlip, onGrade }) {
+function FlashcardStudy({ card, front, showAnswer, onFlip, onGrade, speak }) {
   if (!card) return <EmptyState text="No cards match your filter."/>;
   const frontText = front === "hr" ? card.hr : card.en;
   const backText = front === "hr" ? card.en : card.hr;
@@ -286,7 +288,10 @@ function FlashcardStudy({ card, front, showAnswer, onFlip, onGrade }) {
     <div style={{ marginTop: '16px' }}>
       <div style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 16, padding: 16, boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-          <div style={{ fontSize: '1.6rem', fontWeight: 700, lineHeight: 1.2 }}>{frontText}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ fontSize: '1.6rem', fontWeight: 700, lineHeight: 1.2 }}>{frontText}</div>
+            <button onClick={() => speak(card.hr)} style={buttonBase({ padding: '4px 8px' })}>🔊</button>
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 12, color: '#666' }}>{card.cat}</span>
           </div>
@@ -314,7 +319,7 @@ function FlashcardStudy({ card, front, showAnswer, onFlip, onGrade }) {
   );
 }
 
-function Quiz({ pool, idx, setIdx, choices, front }) {
+function Quiz({ pool, idx, setIdx, choices, front, speak }) {
   if (!pool.length) return <EmptyState text="No cards to quiz."/>;
   const target = pool[idx % pool.length];
   const prompt = front === "hr" ? target.hr : target.en;
@@ -330,13 +335,19 @@ function Quiz({ pool, idx, setIdx, choices, front }) {
 
   return (
     <div style={{ marginTop: 16, background: '#fff', border: '1px solid #e5e5e5', borderRadius: 16, padding: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
         <div style={{ fontSize: '1.4rem', fontWeight: 700 }}>{prompt}</div>
+        <button onClick={() => speak(target.hr)} style={buttonBase({ padding: '4px 8px' })}>🔊</button>
       </div>
       <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         {opts.map(c => (
-          <button key={c.id} onClick={() => pick(c)} style={buttonBase({ textAlign: 'left' })}>
-            {front === "hr" ? c.en : c.hr}
+          <button
+            key={c.id}
+            onClick={() => pick(c)}
+            style={buttonBase({ textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}
+          >
+            <span>{front === "hr" ? c.en : c.hr}</span>
+            <span onClick={(e) => { e.stopPropagation(); speak(c.hr); }}>🔊</span>
           </button>
         ))}
       </div>
@@ -345,7 +356,7 @@ function Quiz({ pool, idx, setIdx, choices, front }) {
   );
 }
 
-function Manager({ cards, allCards, onDelete, onAdd, onExport, onImport, importErr }) {
+function Manager({ cards, allCards, onDelete, onAdd, onExport, onImport, importErr, speak }) {
   const [form, setForm] = useState({ hr: "", en: "", cat: "Custom", note: "" });
   const cats = React.useMemo(() => Array.from(new Set(allCards.map(c => c.cat))), [allCards]);
 
@@ -389,6 +400,7 @@ function Manager({ cards, allCards, onDelete, onAdd, onExport, onImport, importE
                 <div style={{ fontSize: 12, color: '#777' }}>{c.cat} • reps {c.srs?.reps ?? 0} • ease {Number(c.srs?.ease || 2.5).toFixed(2)}</div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
+                <button style={buttonBase()} onClick={() => speak(c.hr)}>Play</button>
                 <button style={buttonBase()} onClick={() => navigator?.clipboard?.writeText(`${c.hr} — ${c.en}`)}>Copy</button>
                 <button style={buttonBase()} onClick={() => onDelete(c.id)}>Delete</button>
               </div>
