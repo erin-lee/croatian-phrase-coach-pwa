@@ -213,21 +213,32 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: '#fafafa', color: '#111' }}>
+    <div className="app">
+      <section className="hero">
+        <div className="sun" />
+        <svg className="pyramid" viewBox="0 0 160 120">
+          <polygon points="80,0 0,120 160,120" />
+          <line x1="80" y1="0" x2="80" y2="120" />
+          <line x1="0" y1="120" x2="80" y2="60" />
+          <line x1="160" y1="120" x2="80" y2="60" />
+        </svg>
+        <div className="grid" />
+        <div className="hero-text">
+          <h1>Croatian Phrase Coach 🇭🇷</h1>
+          <p>Flashcards • Quiz • Spaced Repetition • TTS • Offline</p>
+        </div>
+      </section>
+
       <div className="max-w-5xl" style={{ margin: '0 auto', padding: '1rem 1.5rem' }}>
-        <header style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-          <div>
-            <h1 style={{ fontSize: '1.8rem', fontWeight: 800 }}>Croatian Phrase Coach 🇭🇷</h1>
-            <p style={{ fontSize: '0.9rem', color: '#666' }}>Flashcards • Quiz • Spaced Repetition • TTS • Offline</p>
-          </div>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <button onClick={() => setMode("flashcards")} className={btn(mode === "flashcards")}>Flashcards</button>
-            <button onClick={() => setMode("quiz")} className={btn(mode === "quiz")}>Quiz</button>
-            <button onClick={() => setMode("manage")} className={btn(mode === "manage")}>Manage</button>
-          </div>
+        <header className="nav">
+          <button onClick={() => setMode("flashcards")} className={btn(mode === "flashcards")}>Flashcards</button>
+          <button onClick={() => setMode("quiz")} className={btn(mode === "quiz")}>Quiz</button>
+          <button onClick={() => setMode("manage")} className={btn(mode === "manage")}>Manage</button>
         </header>
 
-        <div style={{ marginTop: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+        <hr className="divider" />
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
           <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search Croatian or English" style={inp()} />
           <select value={cat} onChange={e => setCat(e.target.value)} style={inp()}>
             {["All", ...Array.from(new Set(cards.map(c => c.cat)))].map(c => <option key={c} value={c}>{c}</option>)}
@@ -237,9 +248,11 @@ export default function App() {
           </div>
         </div>
 
-        <div style={{ marginTop: '6px', fontSize: '0.9rem', color: '#666', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-          <span>Total: <b>{cards.filter(c => (cat === "All" || c.cat === cat)).length}</b></span>
-          <span>Due now: <b>{cards.filter(c => (c.srs?.due ?? 0) <= now()).length}</b></span>
+        <hr className="divider" />
+
+        <div style={{ fontSize: '0.8rem', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+          <span>Total: <b style={{ color: 'var(--neon-yellow)' }}>{cards.filter(c => (cat === "All" || c.cat === cat)).length}</b></span>
+          <span>Due now: <b style={{ color: 'var(--neon-yellow)' }}>{cards.filter(c => (c.srs?.due ?? 0) <= now()).length}</b></span>
         </div>
 
         {mode === "flashcards" && (
@@ -286,24 +299,24 @@ function FlashcardStudy({ card, front, showAnswer, onFlip, onGrade, speak }) {
   const backText = front === "hr" ? card.en : card.hr;
   return (
     <div style={{ marginTop: '16px' }}>
-      <div style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 16, padding: 16, boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
+      <div className="panel">
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ fontSize: '1.6rem', fontWeight: 700, lineHeight: 1.2 }}>{frontText}</div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 700, lineHeight: 1.2, color: 'var(--neon-yellow)' }}>{frontText}</div>
             <button onClick={() => speak(card.hr)} style={buttonBase({ padding: '4px 8px' })}>🔊</button>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 12, color: '#666' }}>{card.cat}</span>
+            <span style={{ fontSize: 12, color: 'var(--neon-pink)' }}>{card.cat}</span>
           </div>
         </div>
 
-        {card.note && <p style={{ marginTop: 8, fontSize: 14, color: '#666' }}>{card.note}</p>}
+        {card.note && <p style={{ marginTop: 8, fontSize: 14, color: 'var(--neon-blue)' }}>{card.note}</p>}
 
         <div style={{ marginTop: 16 }}>
           {!showAnswer ? (
             <button onClick={onFlip} style={buttonBase({ width: '100%' })}>Show answer</button>
           ) : (
-            <div style={{ background: '#fafafa', border: '1px solid #eaeaea', borderRadius: 12, padding: 12, fontSize: 18 }}>
+            <div style={{ background: 'rgba(0,0,0,0.2)', border: '2px solid var(--neon-blue)', borderRadius: 12, padding: 12, fontSize: 18, color: 'var(--neon-yellow)' }}>
               {backText}
             </div>
           )}
@@ -311,7 +324,7 @@ function FlashcardStudy({ card, front, showAnswer, onFlip, onGrade, speak }) {
 
         <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
           {["Again","Hard","Okay","Good","Easy"].map((label, i) => (
-            <button key={label} style={gradeBtn(i)} onClick={() => onGrade(i+1)}>{label}</button>
+            <button key={label} className="grade-btn" onClick={() => onGrade(i+1)}>{label}</button>
           ))}
         </div>
       </div>
@@ -334,9 +347,9 @@ function Quiz({ pool, idx, setIdx, choices, front, speak }) {
   const opts = choices.length ? choices : [target, ...pool.filter(c => c.id !== target.id).slice(0,3)];
 
   return (
-    <div style={{ marginTop: 16, background: '#fff', border: '1px solid #e5e5e5', borderRadius: 16, padding: 16 }}>
+    <div className="panel" style={{ marginTop: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-        <div style={{ fontSize: '1.4rem', fontWeight: 700 }}>{prompt}</div>
+        <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--neon-yellow)' }}>{prompt}</div>
         <button onClick={() => speak(target.hr)} style={buttonBase({ padding: '4px 8px' })}>🔊</button>
       </div>
       <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -351,7 +364,7 @@ function Quiz({ pool, idx, setIdx, choices, front, speak }) {
           </button>
         ))}
       </div>
-      <div style={{ marginTop: 8, fontSize: 14, color: '#666' }}>Question { (idx % pool.length) + 1 } / {pool.length}</div>
+      <div style={{ marginTop: 8, fontSize: 14, color: 'var(--neon-pink)' }}>Question { (idx % pool.length) + 1 } / {pool.length}</div>
     </div>
   );
 }
@@ -369,8 +382,8 @@ function Manager({ cards, allCards, onDelete, onAdd, onExport, onImport, importE
 
   return (
     <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-      <div style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 16, padding: 16 }}>
-        <h3 style={{ fontWeight: 700, fontSize: 18 }}>Add a phrase</h3>
+      <div className="panel">
+        <h3 style={{ fontWeight: 700, fontSize: 18, color: 'var(--neon-pink)' }}>Add a phrase</h3>
         <form onSubmit={submit} style={{ marginTop: 12, display: 'grid', gap: 8 }}>
           <input style={inp()} placeholder="Croatian (HR)" value={form.hr} onChange={e => setForm({ ...form, hr: e.target.value })} />
           <input style={inp()} placeholder="English (EN)" value={form.en} onChange={e => setForm({ ...form, en: e.target.value })} />
@@ -386,18 +399,18 @@ function Manager({ cards, allCards, onDelete, onAdd, onExport, onImport, importE
               <input type="file" accept="application/json" style={{ display: 'none' }} onChange={onImport} />
             </label>
           </div>
-          {importErr && <div style={{ color: '#b00020', fontSize: 14 }}>{importErr}</div>}
+          {importErr && <div style={{ color: 'var(--neon-pink)', fontSize: 14 }}>{importErr}</div>}
         </form>
       </div>
 
-      <div style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 16, padding: 16 }}>
-        <h3 style={{ fontWeight: 700, fontSize: 18 }}>Your phrases ({cards.length})</h3>
+      <div className="panel">
+        <h3 style={{ fontWeight: 700, fontSize: 18, color: 'var(--neon-pink)' }}>Your phrases ({cards.length})</h3>
         <ul style={{ marginTop: 12, listStyle: 'none', padding: 0 }}>
           {cards.map(c => (
-            <li key={c.id} style={{ padding: '8px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderBottom: '1px solid #f0f0f0' }}>
+            <li key={c.id} style={{ padding: '8px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderBottom: '1px solid rgba(0,234,255,0.2)' }}>
               <div>
-                <div style={{ fontWeight: 600 }}>{c.hr} <span style={{ color: '#888' }}>→</span> {c.en}</div>
-                <div style={{ fontSize: 12, color: '#777' }}>{c.cat} • reps {c.srs?.reps ?? 0} • ease {Number(c.srs?.ease || 2.5).toFixed(2)}</div>
+                <div style={{ fontWeight: 600 }}>{c.hr} <span style={{ color: 'var(--neon-yellow)' }}>→</span> {c.en}</div>
+                <div style={{ fontSize: 12, color: 'var(--neon-blue)' }}>{c.cat} • reps {c.srs?.reps ?? 0} • ease {Number(c.srs?.ease || 2.5).toFixed(2)}</div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button style={buttonBase()} onClick={() => speak(c.hr)}>Play</button>
@@ -413,20 +426,16 @@ function Manager({ cards, allCards, onDelete, onAdd, onExport, onImport, importE
 }
 
 function EmptyState({ text }) {
-  return <div style={{ marginTop: 20, padding: 16, border: '2px dashed #eaeaea', borderRadius: 16, textAlign: 'center', background: '#fff', color: '#666' }}>{text}</div>;
+  return <div className="empty">{text}</div>;
 }
 
 // Inline styles/helpers
 function btn(active) {
-  return `px-3 py-2 rounded-lg border ${active ? "bg-black text-white border-black" : "bg-white border-neutral-300 hover:bg-neutral-50"}`;
+  return `btn${active ? " btn-active" : ""}`;
 }
 function buttonBase(extra) {
-  return { padding: '8px 12px', borderRadius: 10, border: '1px solid #ddd', background: '#fff', ...extra };
-}
-function gradeBtn(i) {
-  const base = { padding: '8px 10px', borderRadius: 12, fontSize: 14, border: '1px solid #ddd' };
-  return base;
+  return { padding: '8px 12px', borderRadius: 10, border: '2px solid var(--neon-blue)', background: 'rgba(0,0,0,0.2)', color: 'var(--neon-blue)', ...extra };
 }
 function inp(extra) {
-  return { padding: '8px 12px', borderRadius: 10, border: '1px solid #ddd', background: '#fff', ...extra };
+  return { padding: '8px 12px', borderRadius: 10, border: '2px solid var(--neon-blue)', background: 'rgba(0,0,0,0.2)', color: 'var(--neon-blue)', ...extra };
 }
