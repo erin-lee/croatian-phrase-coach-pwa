@@ -298,6 +298,7 @@ function FlashcardStudy({ card, pool, front, onGrade, speak }) {
       <div className="panel">
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+
             <div style={{ fontSize: '1.6rem', fontWeight: 700, lineHeight: 1.2, color: 'var(--neon-yellow)' }}>{prompt}</div>
             <button onClick={() => speak(card.hr)} style={buttonBase({ padding: '4px 8px' })}>🔊</button>
           </div>
@@ -307,6 +308,7 @@ function FlashcardStudy({ card, pool, front, onGrade, speak }) {
         </div>
 
         {card.note && <p style={{ marginTop: 8, fontSize: 14, color: 'var(--neon-blue)' }}>{card.note}</p>}
+
 
         <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           {choices.map(c => (
