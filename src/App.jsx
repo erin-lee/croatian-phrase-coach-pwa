@@ -136,9 +136,7 @@ export default function App() {
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState("All");
   const [front, setFront] = useState("hr"); // which side is front
-  const [showAnswer, setShowAnswer] = useState(false);
   const [quizIdx, setQuizIdx] = useState(0);
-  const [quizChoices, setQuizChoices] = useState([]);
   const [importErr, setImportErr] = useState("");
   const { speak } = useCroatianVoice();
 
@@ -154,15 +152,6 @@ export default function App() {
 
   const nextDue = React.useMemo(() => filtered.find(c => (c.srs?.due ?? 0) <= now()) || filtered[0], [filtered]);
 
-  React.useEffect(() => {
-    if (mode !== "quiz") return;
-    const pool = filtered.slice().sort(() => Math.random() - 0.5);
-    if (!pool.length) return;
-    const target = pool[quizIdx % pool.length];
-    const others = pool.filter(c => c.id !== target.id).slice(0, 3);
-    const opts = [target, ...others].sort(() => Math.random() - 0.5);
-    setQuizChoices(opts);
-  }, [mode, filtered, quizIdx]);
 
   function seedWithSRS(list) {
     return list.map(c => ({ ...c, createdAt: now(), srs: { ease: 2.5, interval: 0, due: 0, reps: 0, lapses: 0 } }));
@@ -170,7 +159,6 @@ export default function App() {
   function gradeCard(card, quality) {
     const updated = review(card, quality);
     setCards(prev => prev.map(c => (c.id === card.id ? updated : c)));
-    setShowAnswer(false);
   }
   function addCard(newCard) {
     setCards(prev => [{ ...newCard, id: uid(), createdAt: now(), srs: { ease: 2.5, interval: 0, due: 0, reps: 0, lapses: 0 } }, ...prev]);
@@ -258,9 +246,8 @@ export default function App() {
         {mode === "flashcards" && (
           <FlashcardStudy
             card={nextDue}
+            pool={filtered}
             front={front}
-            showAnswer={showAnswer}
-            onFlip={() => setShowAnswer(s => !s)}
             onGrade={(q) => nextDue && gradeCard(nextDue, q)}
             speak={speak}
           />
@@ -293,16 +280,26 @@ export default function App() {
   );
 }
 
-function FlashcardStudy({ card, front, showAnswer, onFlip, onGrade, speak }) {
+function FlashcardStudy({ card, pool, front, onGrade, speak }) {
   if (!card) return <EmptyState text="No cards match your filter."/>;
-  const frontText = front === "hr" ? card.hr : card.en;
-  const backText = front === "hr" ? card.en : card.hr;
+  const prompt = front === "hr" ? card.hr : card.en;
+  const choices = useMemo(() => {
+    const others = pool.filter(c => c.id !== card.id).sort(() => Math.random() - 0.5).slice(0, 3);
+    return [...others, card].sort(() => Math.random() - 0.5);
+  }, [card, pool]);
+
+  function pick(c) {
+    const correct = front === "hr" ? c.en === card.en : c.hr === card.hr;
+    onGrade(correct ? 5 : 1);
+  }
+
   return (
     <div style={{ marginTop: '16px' }}>
       <div className="panel">
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ fontSize: '1.6rem', fontWeight: 700, lineHeight: 1.2, color: 'var(--neon-yellow)' }}>{frontText}</div>
+
+            <div style={{ fontSize: '1.6rem', fontWeight: 700, lineHeight: 1.2, color: 'var(--neon-yellow)' }}>{prompt}</div>
             <button onClick={() => speak(card.hr)} style={buttonBase({ padding: '4px 8px' })}>🔊</button>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -312,19 +309,17 @@ function FlashcardStudy({ card, front, showAnswer, onFlip, onGrade, speak }) {
 
         {card.note && <p style={{ marginTop: 8, fontSize: 14, color: 'var(--neon-blue)' }}>{card.note}</p>}
 
-        <div style={{ marginTop: 16 }}>
-          {!showAnswer ? (
-            <button onClick={onFlip} style={buttonBase({ width: '100%' })}>Show answer</button>
-          ) : (
-            <div style={{ background: 'rgba(0,0,0,0.2)', border: '2px solid var(--neon-blue)', borderRadius: 12, padding: 12, fontSize: 18, color: 'var(--neon-yellow)' }}>
-              {backText}
-            </div>
-          )}
-        </div>
 
-        <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
-          {["Again","Hard","Okay","Good","Easy"].map((label, i) => (
-            <button key={label} className="grade-btn" onClick={() => onGrade(i+1)}>{label}</button>
+        <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {choices.map(c => (
+            <button
+              key={c.id}
+              onClick={() => pick(c)}
+              style={buttonBase({ textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}
+            >
+              <span>{front === "hr" ? c.en : c.hr}</span>
+              <span onClick={(e) => { e.stopPropagation(); speak(c.hr); }}>🔊</span>
+            </button>
           ))}
         </div>
       </div>
@@ -332,7 +327,7 @@ function FlashcardStudy({ card, front, showAnswer, onFlip, onGrade, speak }) {
   );
 }
 
-function Quiz({ pool, idx, setIdx, choices, front, speak }) {
+function Quiz({ pool, idx, setIdx, front, speak }) {
   if (!pool.length) return <EmptyState text="No cards to quiz."/>;
   const target = pool[idx % pool.length];
   const prompt = front === "hr" ? target.hr : target.en;
@@ -340,11 +335,13 @@ function Quiz({ pool, idx, setIdx, choices, front, speak }) {
 
   function pick(choice) {
     const isRight = (front === "hr" ? choice.en === correct : choice.hr === correct);
-    // simple feedback then next
     setTimeout(() => setIdx(idx + 1), 300);
   }
 
-  const opts = choices.length ? choices : [target, ...pool.filter(c => c.id !== target.id).slice(0,3)];
+  const opts = useMemo(() => {
+    const others = pool.filter(c => c.id !== target.id).sort(() => Math.random() - 0.5).slice(0, 3);
+    return [...others, target].sort(() => Math.random() - 0.5);
+  }, [target, pool]);
 
   return (
     <div className="panel" style={{ marginTop: 16 }}>
