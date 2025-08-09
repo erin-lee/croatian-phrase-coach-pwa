@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 // Croatian Phrase Coach – single-file React app
-// Flashcards + Quiz + Spaced repetition + TTS + Import/Export
+// Flashcards + Spaced repetition + TTS + Import/Export
 
 /** @typedef {{
   id: string,
@@ -105,11 +105,11 @@ const SEED = [
 
 function useCroatianVoice() {
   const [voices, setVoices] = useState([]);
-  const croatian = React.useMemo(() => {
+  const croatian = useMemo(() => {
     return voices.find(v => /hr|croatian/i.test(`${v.lang} ${v.name}`)) || voices[0];
   }, [voices]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const load = () => setVoices(window.speechSynthesis?.getVoices?.() || []);
     load();
     const id = setInterval(load, 500);
@@ -132,25 +132,23 @@ function useCroatianVoice() {
 
 export default function App() {
   const [cards, setCards] = useState(() => loadState()?.cards ?? seedWithSRS(SEED));
-  const [mode, setMode] = useState("flashcards"); // flashcards | quiz | manage
+  const [mode, setMode] = useState("flashcards"); // flashcards | manage
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState("All");
   const [front, setFront] = useState("hr"); // which side is front
-  const [quizIdx, setQuizIdx] = useState(0);
   const [importErr, setImportErr] = useState("");
   const { speak } = useCroatianVoice();
 
-  React.useEffect(() => saveState({ cards }), [cards]);
+  useEffect(() => saveState({ cards }), [cards]);
 
-  const cats = React.useMemo(() => ["All", ...Array.from(new Set(cards.map(c => c.cat)))], [cards]);
-  const dueCount = React.useMemo(() => cards.filter(c => (c.srs?.due ?? 0) <= now()).length, [cards]);
+  const cats = useMemo(() => ["All", ...Array.from(new Set(cards.map(c => c.cat)))], [cards]);
 
-  const filtered = React.useMemo(() => {
+  const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return cards.filter(c => (cat === "All" || c.cat === cat) && (!q || `${c.hr} ${c.en}`.toLowerCase().includes(q)));
   }, [cards, cat, query]);
 
-  const nextDue = React.useMemo(() => filtered.find(c => (c.srs?.due ?? 0) <= now()) || filtered[0], [filtered]);
+  const nextDue = useMemo(() => filtered.find(c => (c.srs?.due ?? 0) <= now()) || filtered[0], [filtered]);
 
 
   function seedWithSRS(list) {
@@ -213,14 +211,13 @@ export default function App() {
         <div className="grid" />
         <div className="hero-text">
           <h1>Croatian Phrase Coach 🇭🇷</h1>
-          <p>Flashcards • Quiz • Spaced Repetition • TTS • Offline</p>
+          <p>Flashcards • Spaced Repetition • TTS • Offline</p>
         </div>
       </section>
 
       <div className="max-w-5xl" style={{ margin: '0 auto', padding: '1rem 1.5rem' }}>
         <header className="nav">
           <button onClick={() => setMode("flashcards")} className={btn(mode === "flashcards")}>Flashcards</button>
-          <button onClick={() => setMode("quiz")} className={btn(mode === "quiz")}>Quiz</button>
           <button onClick={() => setMode("manage")} className={btn(mode === "manage")}>Manage</button>
         </header>
 
@@ -253,16 +250,6 @@ export default function App() {
           />
         )}
 
-        {mode === "quiz" && (
-          <Quiz
-            pool={filtered}
-            idx={quizIdx}
-            setIdx={setQuizIdx}
-            front={front}
-            speak={speak}
-          />
-        )}
-
         {mode === "manage" && (
           <Manager
             cards={filtered}
@@ -289,6 +276,7 @@ function FlashcardStudy({ card, pool, front, onGrade, speak }) {
   }, [card, pool]);
 
   function pick(c) {
+    speak(c.hr);
     const correct = front === "hr" ? c.en === card.en : c.hr === card.hr;
     onGrade(correct ? 5 : 1);
   }
@@ -298,9 +286,12 @@ function FlashcardStudy({ card, pool, front, onGrade, speak }) {
       <div className="panel">
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-
-            <div style={{ fontSize: '1.6rem', fontWeight: 700, lineHeight: 1.2, color: 'var(--neon-yellow)' }}>{prompt}</div>
-            <button onClick={() => speak(card.hr)} style={buttonBase({ padding: '4px 8px' })}>🔊</button>
+            <div
+              style={{ fontSize: '1.6rem', fontWeight: 700, lineHeight: 1.2, color: 'var(--neon-yellow)', cursor: 'pointer' }}
+              onClick={() => speak(card.hr)}
+            >
+              {prompt}
+            </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 12, color: 'var(--neon-pink)' }}>{card.cat}</span>
@@ -315,10 +306,9 @@ function FlashcardStudy({ card, pool, front, onGrade, speak }) {
             <button
               key={c.id}
               onClick={() => pick(c)}
-              style={buttonBase({ textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}
+              style={buttonBase({ textAlign: 'center' })}
             >
-              <span>{front === "hr" ? c.en : c.hr}</span>
-              <span onClick={(e) => { e.stopPropagation(); speak(c.hr); }}>🔊</span>
+              {front === "hr" ? c.en : c.hr}
             </button>
           ))}
         </div>
@@ -327,48 +317,9 @@ function FlashcardStudy({ card, pool, front, onGrade, speak }) {
   );
 }
 
-function Quiz({ pool, idx, setIdx, front, speak }) {
-  if (!pool.length) return <EmptyState text="No cards to quiz."/>;
-  const target = pool[idx % pool.length];
-  const prompt = front === "hr" ? target.hr : target.en;
-  const correct = front === "hr" ? target.en : target.hr;
-
-  function pick(choice) {
-    const isRight = (front === "hr" ? choice.en === correct : choice.hr === correct);
-    setTimeout(() => setIdx(idx + 1), 300);
-  }
-
-  const opts = useMemo(() => {
-    const others = pool.filter(c => c.id !== target.id).sort(() => Math.random() - 0.5).slice(0, 3);
-    return [...others, target].sort(() => Math.random() - 0.5);
-  }, [target, pool]);
-
-  return (
-    <div className="panel" style={{ marginTop: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-        <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--neon-yellow)' }}>{prompt}</div>
-        <button onClick={() => speak(target.hr)} style={buttonBase({ padding: '4px 8px' })}>🔊</button>
-      </div>
-      <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-        {opts.map(c => (
-          <button
-            key={c.id}
-            onClick={() => pick(c)}
-            style={buttonBase({ textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}
-          >
-            <span>{front === "hr" ? c.en : c.hr}</span>
-            <span onClick={(e) => { e.stopPropagation(); speak(c.hr); }}>🔊</span>
-          </button>
-        ))}
-      </div>
-      <div style={{ marginTop: 8, fontSize: 14, color: 'var(--neon-pink)' }}>Question { (idx % pool.length) + 1 } / {pool.length}</div>
-    </div>
-  );
-}
-
 function Manager({ cards, allCards, onDelete, onAdd, onExport, onImport, importErr, speak }) {
   const [form, setForm] = useState({ hr: "", en: "", cat: "Custom", note: "" });
-  const cats = React.useMemo(() => Array.from(new Set(allCards.map(c => c.cat))), [allCards]);
+  const cats = useMemo(() => Array.from(new Set(allCards.map(c => c.cat))), [allCards]);
 
   function submit(e) {
     e.preventDefault();
@@ -405,12 +356,11 @@ function Manager({ cards, allCards, onDelete, onAdd, onExport, onImport, importE
         <ul style={{ marginTop: 12, listStyle: 'none', padding: 0 }}>
           {cards.map(c => (
             <li key={c.id} style={{ padding: '8px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderBottom: '1px solid rgba(0,234,255,0.2)' }}>
-              <div>
+              <div onClick={() => speak(c.hr)} style={{ cursor: 'pointer' }}>
                 <div style={{ fontWeight: 600 }}>{c.hr} <span style={{ color: 'var(--neon-yellow)' }}>→</span> {c.en}</div>
                 <div style={{ fontSize: 12, color: 'var(--neon-blue)' }}>{c.cat} • reps {c.srs?.reps ?? 0} • ease {Number(c.srs?.ease || 2.5).toFixed(2)}</div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button style={buttonBase()} onClick={() => speak(c.hr)}>Play</button>
                 <button style={buttonBase()} onClick={() => navigator?.clipboard?.writeText(`${c.hr} — ${c.en}`)}>Copy</button>
                 <button style={buttonBase()} onClick={() => onDelete(c.id)}>Delete</button>
               </div>

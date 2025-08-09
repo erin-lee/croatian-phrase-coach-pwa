@@ -40,8 +40,10 @@ h1, h2, h3 {
 }
 
 .hero h1 {
-  font-size: 2.2rem;
+  font-size: 2.8rem;
   color: var(--neon-pink);
+  font-weight: 700;
+  text-shadow: 2px 2px 4px #000;
 }
 
 .hero p {
