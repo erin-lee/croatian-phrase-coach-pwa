@@ -1,7 +1,7 @@
 # Croatian Phrase Coach (PWA)
 
 A minimal React + Vite Progressive Web App for learning Croatian phrases.
-- Flashcards + Quiz
+- Flashcards
 - Spaced repetition (SM-2-lite)
 - Text-to-speech (browser voices)
 - Offline-ready via service worker

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 // Croatian Phrase Coach – single-file React app
-// Flashcards + Quiz + Spaced repetition + TTS + Import/Export
+// Flashcards + Spaced repetition + TTS + Import/Export
 
 /** @typedef {{
   id: string,
@@ -212,14 +212,13 @@ export default function App() {
         <div className="grid" />
         <div className="hero-text">
           <h1>Croatian Phrase Coach 🇭🇷</h1>
-          <p>Flashcards • Quiz • Spaced Repetition • TTS • Offline</p>
+          <p>Flashcards • Spaced Repetition • TTS • Offline</p>
         </div>
       </section>
 
       <div className="max-w-5xl" style={{ margin: '0 auto', padding: '1rem 1.5rem' }}>
         <header className="nav">
           <button onClick={() => setMode("flashcards")} className={btn(mode === "flashcards")}>Flashcards</button>
-          <button onClick={() => setMode("quiz")} className={btn(mode === "quiz")}>Quiz</button>
           <button onClick={() => setMode("manage")} className={btn(mode === "manage")}>Manage</button>
         </header>
 
@@ -248,16 +247,6 @@ export default function App() {
             pool={filtered}
             front={front}
             onGrade={(q) => nextDue && gradeCard(nextDue, q)}
-            speak={speak}
-          />
-        )}
-
-        {mode === "quiz" && (
-          <Quiz
-            pool={filtered}
-            idx={quizIdx}
-            setIdx={setQuizIdx}
-            front={front}
             speak={speak}
           />
         )}
@@ -328,6 +317,7 @@ function FlashcardStudy({ card, pool, front, onGrade, speak }) {
     </div>
   );
 }
+
 
 function Quiz({ pool, idx, setIdx, front, speak }) {
   if (!pool.length) return <EmptyState text="No cards to quiz."/>;
