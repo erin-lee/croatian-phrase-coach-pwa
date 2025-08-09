@@ -1,0 +1,61 @@
+# Dependencies
+node_modules/
+
+# Build output
+/dist/
+/build/
+.out/
+/out/
+.next/
+
+# Caches and temporary files
+.vite/
+.vscode/.tsbuildinfo
+*.tsbuildinfo
+.rollup.cache/
+.cache/
+.tmp/
+.temp/
+.eslintcache
+.stylelintcache
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Environment files
+.env
+.env.*
+!.env.example
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor/IDE files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+.idea/
+*.swp
+*.swo
+
+# Test coverage
+coverage/
+
+# Hosting/platform artifacts
+.vercel/
+.netlify/
+.firebase/
+
+# Tooling
+node_modules/.vite/
+
