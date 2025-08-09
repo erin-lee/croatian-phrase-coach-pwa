@@ -132,7 +132,8 @@ function useCroatianVoice() {
 
 export default function App() {
   const [cards, setCards] = useState(() => loadState()?.cards ?? seedWithSRS(SEED));
-  const [mode, setMode] = useState("flashcards"); // flashcards | manage
+  const [mode, setMode] = useState("flashcards"); // flashcards | quiz | manage
+  const [quizIdx, setQuizIdx] = useState(0);
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState("All");
   const [front, setFront] = useState("hr"); // which side is front
@@ -312,6 +313,50 @@ function FlashcardStudy({ card, pool, front, onGrade, speak }) {
             </button>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+
+function Quiz({ pool, idx, setIdx, front, speak }) {
+  if (!pool.length) return <EmptyState text="No cards to quiz."/>;
+  const target = pool[idx % pool.length];
+  const prompt = front === "hr" ? target.hr : target.en;
+
+  const opts = useMemo(() => {
+    const others = pool.filter(c => c.id !== target.id).sort(() => Math.random() - 0.5).slice(0, 3);
+    return [...others, target].sort(() => Math.random() - 0.5);
+  }, [target, pool]);
+
+  function pick(c) {
+    speak(c.hr);
+    setTimeout(() => setIdx(idx + 1), 300);
+  }
+
+  return (
+    <div className="panel" style={{ marginTop: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+        <div
+          onClick={() => speak(target.hr)}
+          style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--neon-yellow)', cursor: 'pointer' }}
+        >
+          {prompt}
+        </div>
+      </div>
+      <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        {opts.map(c => (
+          <button
+            key={c.id}
+            onClick={() => pick(c)}
+            style={buttonBase({ textAlign: 'center' })}
+          >
+            {front === "hr" ? c.en : c.hr}
+          </button>
+        ))}
+      </div>
+      <div style={{ marginTop: 8, fontSize: 14, color: 'var(--neon-pink)' }}>
+        Question {(idx % pool.length) + 1} / {pool.length}
       </div>
     </div>
   );
